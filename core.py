@@ -351,7 +351,7 @@ class TypeDefCollection(object):
         for t in self.getTypeDefs():
             t.check()
 
-    def disentangle(self):
+    def sort(self):
 
         def sufficient(typedef, typedefs):
             known = typedefs.getTypeNames()

@@ -28,6 +28,16 @@ from core import *
 # TODO: Allow sourcing other TPL files from TPL file
 
 
+class EtplParseException(Exception):
+
+    def __init__(self, error):
+        self.error = error
+
+
+def failHard(s, l, expr, err):
+    raise EtplParseException(err)
+
+
 def getLineNumber(text, pos):
     return text.count('\n', 0, pos) + 1
 
@@ -87,9 +97,9 @@ pypReserved = NotAny(
 # _____
 
 # -----------------------------------------------------------------------------
-# BNF: Identifier = ...
+# EBNF: Identifier = ...
 # -----------------------------------------------------------------------------
-pypIdentifier = pypReserved + Combine(Word(alphas) + Optional(Word(alphanums + "_")))
+pypIdentifier = pypReserved + Word(alphas, alphanums + "_")
 
 pypIdentifierList = Group(delimitedList(pypIdentifier))
 
@@ -162,18 +172,18 @@ pypOptionalIntRangeGrouped.setParseAction(
 pypOptionalIntRangeList = delimitedList(pypOptionalIntRangeGrouped)
 
 # -----------------------------------------------------------------------------
-# BNF: EnumItemIdentifier = Identifier
+# EBNF: EnumItemIdentifier = Identifier
 # -----------------------------------------------------------------------------
 pypEnumItemIdentifier = pypIdentifier.copy()
 
 # -----------------------------------------------------------------------------
-# BNF: AbstractEnumItem = EnumItemIdentifier
+# EBNF: AbstractEnumItem = EnumItemIdentifier
 # -----------------------------------------------------------------------------
 pypAbstractEnumItem = pypEnumItemIdentifier.copy()
 pypAbstractEnumItem.setParseAction(lambda s, l, t: EnumItemAbstract(t[0]))
 
 # -----------------------------------------------------------------------------
-# BNF: EnumItem = [ EnumItemIdentifier ] "(" OptionalIntRange ")"
+# EBNF: EnumItem = [ EnumItemIdentifier ], "(", OptionalIntRange, ")"
 # -----------------------------------------------------------------------------
 # TODO: allow for multiple ranges in one EnumItem
 pypEnumItem = Optional(pypEnumItemIdentifier) + Block('()', pypOptionalIntRange)
@@ -188,7 +198,7 @@ def parseEnumItem(s, l, t):
 pypEnumItem.setParseAction(parseEnumItem)
 
 # -----------------------------------------------------------------------------
-# BNF: FallbackEnumItem = [ EnumItemIdentifier ] "(" "*" ")"
+# EBNF: FallbackEnumItem = [ EnumItemIdentifier ] "(" "*" ")"
 # -----------------------------------------------------------------------------
 pypFallbackEnumItem = Optional(pypEnumItemIdentifier) \
                     + Suppress(Block('()', Literal('*')))
@@ -203,8 +213,8 @@ def parseFallbackEnumItem(s, l, t):
 pypFallbackEnumItem.setParseAction(parseFallbackEnumItem)
 
 # -----------------------------------------------------------------------------
-# BNF: GenericEnumItem = FallbackEnumItem | EnumItem | AbstractEnumItem
-# BNF: EnumBody = GenericEnumItem | GenericEnumItem "," EnumBody
+# EBNF: GenericEnumItem = FallbackEnumItem | EnumItem | AbstractEnumItem
+# EBNF: EnumBody = GenericEnumItem | GenericEnumItem "," EnumBody
 # -----------------------------------------------------------------------------
 pypGenericEnumItem = pypFallbackEnumItem | pypEnumItem | pypAbstractEnumItem
 
@@ -347,28 +357,53 @@ pypSizeDef.setParseAction(parseSizeDef)
 # Type Parametrization
 # _____________________________________________________________________________
 
-pypParameter = pypIdentifier \
-               - Suppress(Literal('=')) \
-               - (pypInteger ^ pypIdentifier)
+# -----------------------------------------------------------------------------
+# EBNF: 
+# -----------------------------------------------------------------------------
+pypTypeParameterName = Word(alphas, alphanums + "_")
 
-pypParameter.setParseAction(lambda s, l, t: {t[0]: t[1]})
+pypTypeParameterName.setName('parameter name')
 
-pypParameters = delimitedList(pypParameter)
 
-pypParameters.setParseAction(lambda s, l, t: reduce( \
+# -----------------------------------------------------------------------------
+# EBNF: 
+# -----------------------------------------------------------------------------
+pypTypeParameterValue = pypInteger | Word(alphas, alphanums + "_")
+
+pypTypeParameterValue.setName('parameter value')
+
+
+# -----------------------------------------------------------------------------
+# EBNF: TypeParameterChoice = TypeParameterName, "=", TypeParameterValue;
+# -----------------------------------------------------------------------------
+pypTypeParameterChoice = \
+        pypTypeParameterName \
+        - Suppress(Literal('=')) \
+        - pypTypeParameterValue
+
+pypTypeParameterChoice.setParseAction(lambda s, l, t: {t[0]: t[1]})
+
+
+# -----------------------------------------------------------------------------
+# EBNF: TypeParameterChoiceList =
+#               "<", TypeParameterChoice, { (",", TypeParameterChoice) }, ">";
+# -----------------------------------------------------------------------------
+pypTypeParameterChoiceList = \
+        Suppress(Literal('<')) \
+        - pypTypeParameterChoice \
+        + ZeroOrMore(Suppress(Literal(",")) - pypTypeParameterChoice) \
+        - Suppress(Literal('>'))
+
+pypTypeParameterChoiceList.setParseAction(lambda s, l, t: reduce( \
         lambda x, y: InstanceDef.mergeArgsDisjunct(x, y), t))
 
-pypParameterSet = Suppress(Literal('<')) \
-                - pypParameters \
-                - Suppress(Literal('>'))
+pypTypeParameterChoiceList.setFailAction(failHard)
 
 
-class TypeParametrization:
-
-    def __init__(self, parametrization):
-        self.parametrization = parametrization
-
-pypTypeParametrization = Suppress(Literal('::')) - pypParameterSet
+# -----------------------------------------------------------------------------
+# EBNF: TypeParametrization = "::", TypeParameterChoiceList;
+# -----------------------------------------------------------------------------
+pypTypeParametrization = Suppress(Literal('::')) - pypTypeParameterChoiceList
 
 pypTypeParametrization.setParseAction(lambda s, l, t: \
         reduce(lambda x, y: InstanceDef.mergeArgsDisjunct(x, y), t));
@@ -440,9 +475,9 @@ def parseTypeDef(s, l, t):
 pypTypeDef.setParseAction(parseTypeDef)
 
 
-pypTypeDefs << ZeroOrMore(pypConstDef | pypTypeDef)
+pypTypeDefs << ZeroOrMore(pypConstDef ^ pypTypeDef)
 
-pypFile = pypTypeDefs + stringEnd
+pypFile = pypTypeDefs - stringEnd
 
 
 # _____________________________________________________________________________

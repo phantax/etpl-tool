@@ -1,0 +1,10 @@
+
+enum {
+    warning(1),
+    fatal(2),
+    unknown(*), 
+    (255)
+} AlertLevel;
+
+uint8::<hhd=4,> Version;
+

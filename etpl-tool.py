@@ -22,7 +22,7 @@
 # Fifth Floor, Boston, MA 02110-1301, USA.
 
 #
-# [parse] -> [check] -> [normalize] -> [disentangle] -> [check] -> [...]
+# [parse] -> [check] -> [normalize] -> [sort] -> [check] -> [...]
 #
 
 import sys
@@ -38,6 +38,17 @@ import normalize
 #
 def printError(msg):
     print TextFormatter.makeBoldRed('Error: {0}'.format(msg))
+    quit()
+
+
+#
+# _____________________________________________________________________________
+#
+def printSyntaxError(error):    
+    print(TextFormatter.makeBoldRed('Error in line {0}: {1}' \
+            .format(error.lineno, error.msg)))
+    print(error.line)
+    print(' ' * (error.col - 1) + '^')
     quit()
 
 
@@ -68,13 +79,15 @@ def main(argv):
     # ===== Parse input files =====
     try:
         typedefs = parse(text)
+    except EtplParseException as e:
+        printSyntaxError(e.error)
     except TPLError as e:
         printError(str(e))
 
     #typedefs.addGlobalVar('lengthy')
 
-    # ===== Print before canonicalization =====
-    print '='*50 + '\nBefore canonicalization:\n' + '='*50 + '\n'
+    # ===== Print before normalization =====
+    print '='*50 + '\nBefore normalization:\n' + '='*50 + '\n'
     print typedefs, '\n'*2
 
     # ===== Print generated source code =====
@@ -82,24 +95,24 @@ def main(argv):
     print typedefs.getTPLCode()
     print '\n'
 
-    # ===== Canonicalize =====
+    # ===== Normalize =====
     try:
         typedefs = typedefs.normalize()
     except TPLError as e:
         printError(str(e))
 
-    # ===== Print after canonicalization =====
-    print '='*50 + '\nAfter canonicalization:\n' + '='*50 + '\n'
+    # ===== Print after normalization =====
+    print '='*50 + '\nAfter normalization:\n' + '='*50 + '\n'
     print typedefs, '\n'*2
 
     # ===== Resolve dependencies =====
     try:
-        typedefs.disentangle()
+        typedefs.sort()
         typedefs.generateTypeIDs()
     except TPLError as e:
         printError(str(e))
 
-    # ===== Print after disentangling =====
+    # ===== Print after sorting =====
     print '='*50 + '\nAfter disentangling:\n' + '='*50 + '\n'
     print typedefs, '\n'*2
 
