@@ -43,15 +43,6 @@ def getLineNumber(text, pos):
 
 # _____________________________________________________________________________
 
-pypNonComment = ZeroOrMore(CharsNotIn('#'))
-pypNonComment.setParseAction(lambda s, l, t: t if len(t) > 0 else [''])
-
-pypComment = pythonStyleComment
-
-pypLine = pypNonComment + Suppress(Optional(pypComment))
-
-# _____
-
 def Block(par, body, name=None):
     block = Suppress(Literal(par[0])) + body + Suppress(Literal(par[1]))
     if name:
@@ -60,7 +51,6 @@ def Block(par, body, name=None):
 
 def CommaSeparatedList(expression):
     return expression + ZeroOrMore(Suppress(Literal(",")) - expression)
-
 
 # _____
 
@@ -544,6 +534,8 @@ pypTypeDef.setParseAction(parseTypeDef)
 
 pypFile = ZeroOrMore(pypConstDef | pypTypeDef) + stringEnd
 
+pypFile.ignore(cppStyleComment)
+
 
 # _____________________________________________________________________________
 #
@@ -604,16 +596,6 @@ pypStructVarDefs << ZeroOrMore(pypStructVarDef)
 #
 # _____________________________________________________________________________
 #
-def printError(text, lineno, col, msg):
-    lines = text.split('\n')
-    print('Error in line {0}: {1}'.format(lineno, msg))
-    print(lines[lineno - 1])
-    print('{0}^'.format(' ' * (col - 1)))
-
-
-#
-# _____________________________________________________________________________
-#
 def removeComments(text):
     return '\n'.join(reduce(lambda x, y: x + y,
         [pypLine.parseString(line).asList() for line in text.split('\n')]))
@@ -625,7 +607,8 @@ def removeComments(text):
 def parse(text):
 
     typedefs = TypeDefCollection()
-    typedefs.addDefs(pypFile.parseString(removeComments(text)).asList())
+#    typedefs.addDefs(pypFile.parseString(removeComments(text)).asList())
+    typedefs.addDefs(pypFile.parseString(text).asList())
     return typedefs    
 
 

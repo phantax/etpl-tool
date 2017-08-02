@@ -562,8 +562,8 @@ struct {
 struct {
     SignatureAndHashAlgorithm algo;
     opaque signature<0..2^16-1>;
-#    uint16 length;
-#    ECDSASignature signature(length);
+//    uint16 length;
+//    ECDSASignature signature(length);
 } Signature;
 
 struct {
@@ -625,7 +625,7 @@ enum {
     named_curve (3),
     unknown(*),
     (255)
-#    reserved(248..255)
+//    reserved(248..255)
 } ECCurveType;
 
 struct {
@@ -633,13 +633,13 @@ struct {
 } ECPoint;
 
 
-# =============================================================================
-# Extensions
-# =============================================================================
+// =============================================================================
+// Extensions
+// =============================================================================
 
 
-# CertificateStatusRequest extension ("server_name(0)")
-# -----------------------------------------------------------------------------
+// CertificateStatusRequest extension ("server_name(0)")
+// -----------------------------------------------------------------------------
 
 enum {
     host_name(0), unknown(*), (255)
@@ -662,8 +662,8 @@ struct {
 } ServerNameList;
 
 
-# MaxFragmentLength extension ("max_fragment_length(1)")
-# -----------------------------------------------------------------------------
+// MaxFragmentLength extension ("max_fragment_length(1)")
+// -----------------------------------------------------------------------------
 
 enum {
     max256(1), max512(2), max2048(3), max4096(4), unknown(*), (255)
@@ -674,8 +674,8 @@ struct {
 } MaxFragmentLengthExtension;
 
 
-# ClientCertificateURL extension ("client_certificate_url(2)")
-# -----------------------------------------------------------------------------
+// ClientCertificateURL extension ("client_certificate_url(2)")
+// -----------------------------------------------------------------------------
 
 enum {
     individual_certs(0), pkipath(1), (255)
@@ -698,8 +698,8 @@ struct {
 } URLAndHash;
 
 
-# TrustedCAs extension ("trusted_ca_keys(3)")
-# -----------------------------------------------------------------------------
+// TrustedCAs extension ("trusted_ca_keys(3)")
+// -----------------------------------------------------------------------------
 
 enum {
     pre_agreed(0),
@@ -733,14 +733,14 @@ struct {
 } TrustedAuthorities;
 
 
-# TruncatedHMAC extension ("truncated_hmac(4)")
-# -----------------------------------------------------------------------------
+// TruncatedHMAC extension ("truncated_hmac(4)")
+// -----------------------------------------------------------------------------
 
 struct {} TruncatedHMACExtension;
 
 
-# CertificateStatusRequest extension ("status request(5)")
-# -----------------------------------------------------------------------------
+// CertificateStatusRequest extension ("status request(5)")
+// -----------------------------------------------------------------------------
 
 opaque ResponderID<1..2^16-1>;
 
@@ -762,8 +762,8 @@ struct {
 } CertificateStatusRequest;
 
 
-# UserMapping extension ("user_mapping(6)")
-# -----------------------------------------------------------------------------
+// UserMapping extension ("user_mapping(6)")
+// -----------------------------------------------------------------------------
 
 enum {
     upn_domain_hint(64),
@@ -776,8 +776,8 @@ struct {
 } UserMappingTypeList;
 
 
-# UserMapping extension ("client_authz(7), server_authz(8)")
-# -----------------------------------------------------------------------------
+// UserMapping extension ("client_authz(7), server_authz(8)")
+// -----------------------------------------------------------------------------
 
 enum {
     x509_attr_cert(0),
@@ -791,16 +791,16 @@ enum {
 AuthzDataFormat AuthzDataFormats<1..2^8-1>;
 
 
-# CertificateType extension ("cert_type(9)")
-# -----------------------------------------------------------------------------
+// CertificateType extension ("cert_type(9)")
+// -----------------------------------------------------------------------------
 
 struct {
     CertificateType certificate_types<1..2^8-1>;
 } Client_CertificateTypeExtension;
 
 
-# SupportedGroups extension ("supported_groups(10)")
-# -----------------------------------------------------------------------------
+// SupportedGroups extension ("supported_groups(10)")
+// -----------------------------------------------------------------------------
 
 enum {
     sect163k1 (1), sect163r1 (2), sect163r2 (3),
@@ -812,7 +812,7 @@ enum {
     secp192r1 (19), secp224k1 (20), secp224r1 (21),
     secp256k1 (22), secp256r1 (23), secp384r1 (24),
     secp521r1 (25),
-#    reserved (0xFE00..0xFEFF),
+//    reserved (0xFE00..0xFEFF),
     arbitrary_explicit_prime_curves(0xFF01),
     arbitrary_explicit_char2_curves(0xFF02),
     unknown(*), (0xFFFF)
@@ -823,8 +823,8 @@ struct {
 } EllipticCurveList;
 
 
-# ECPointFormats extension ("ec_point_formats(11)")
-# -----------------------------------------------------------------------------
+// ECPointFormats extension ("ec_point_formats(11)")
+// -----------------------------------------------------------------------------
 
 enum {
     uncompressed(0),
@@ -839,16 +839,16 @@ struct {
 } ECPointFormatList;
 
 
-# SRP extension ("srp(12)")
-# -----------------------------------------------------------------------------
+// SRP extension ("srp(12)")
+// -----------------------------------------------------------------------------
 
 struct {
     opaque srp_I<1..2^8-1>;
 } SRPExtension;
 
 
-# SignatureAlgorithms extension ("signature_algorithms(13)")
-# -----------------------------------------------------------------------------
+// SignatureAlgorithms extension ("signature_algorithms(13)")
+// -----------------------------------------------------------------------------
 
 enum {
     anonymous(0), rsa(1), dsa(2), ecdsa(3), unknown(*), (255)
@@ -867,8 +867,8 @@ struct {
 SignatureAndHashAlgorithm SignatureAndHashAlgorithms<2..2^16-1>;
 
 
-# UseSRTP extension ("use_srtp(14)")
-# -----------------------------------------------------------------------------
+// UseSRTP extension ("use_srtp(14)")
+// -----------------------------------------------------------------------------
 
 uint8 SRTPProtectionProfile[2];
 
@@ -880,8 +880,8 @@ struct {
 } UseSRTPData;
 
 
-# Heartbeat extension ("heartbeat(15)")
-# -----------------------------------------------------------------------------
+// Heartbeat extension ("heartbeat(15)")
+// -----------------------------------------------------------------------------
 
 enum {
     peer_allowed_to_send(1),
@@ -895,8 +895,8 @@ struct {
 } HeartbeatExtension;
 
 
-# ALPN extension ("application_layer_protocol_negotiation(16)")
-# -----------------------------------------------------------------------------
+// ALPN extension ("application_layer_protocol_negotiation(16)")
+// -----------------------------------------------------------------------------
 
 opaque ProtocolName<1..2^8-1>;
 
@@ -905,8 +905,8 @@ struct {
 } ProtocolNameList;
 
 
-# StatusRequest2 extension ("status_request_v2(17)")
-# -----------------------------------------------------------------------------
+// StatusRequest2 extension ("status_request_v2(17)")
+// -----------------------------------------------------------------------------
 
 enum {
     ocsp(1),
@@ -932,14 +932,14 @@ struct {
 } CertificateStatusRequestListV2;
 
 
-# SignedCertificateTimestamp extension ("signed_certificate_timestamp(18)")
-# -----------------------------------------------------------------------------
+// SignedCertificateTimestamp extension ("signed_certificate_timestamp(18)")
+// -----------------------------------------------------------------------------
 
 struct {} Client_SignedCertificateTimestamp;
 
 
-# Client/ServerCertificateType extension ("client/server_certificate_type(19/20)")
-# -----------------------------------------------------------------------------
+// Client/ServerCertificateType extension ("client/server_certificate_type(19/20)")
+// -----------------------------------------------------------------------------
 
 enum {
     X509(0),
@@ -957,8 +957,8 @@ struct {
 } Client_ServerCertTypeExtension;
 
 
-# Padding extension ("padding(21)")
-# -----------------------------------------------------------------------------
+// Padding extension ("padding(21)")
+// -----------------------------------------------------------------------------
 
 enum {
     zero(0),
@@ -970,20 +970,20 @@ struct {
 } PaddingExtension;
 
 
-# EncryptThenMac extension ("encrypt_then_mac(22)")
-# -----------------------------------------------------------------------------
+// EncryptThenMac extension ("encrypt_then_mac(22)")
+// -----------------------------------------------------------------------------
 
 struct {} EncryptThenMacExtension;
 
 
-# ExtendedMasterSecret extension ("extended_master_secret(23)")
-# -----------------------------------------------------------------------------
+// ExtendedMasterSecret extension ("extended_master_secret(23)")
+// -----------------------------------------------------------------------------
 
 struct {} ExtendedMasterSecretExtension;
 
 
-# CachedInformation extension ("cached_info(25)")
-# -----------------------------------------------------------------------------
+// CachedInformation extension ("cached_info(25)")
+// -----------------------------------------------------------------------------
 
 enum {
     cert(1),
@@ -1009,8 +1009,8 @@ struct {
 } Server_CachedInformation;
 
 
-# RenegotiationInfo extension ("renegotiation_info(65281)")
-# -----------------------------------------------------------------------------
+// RenegotiationInfo extension ("renegotiation_info(65281)")
+// -----------------------------------------------------------------------------
 
 struct {
     opaque renegotiated_connection<0..255>;
