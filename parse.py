@@ -110,32 +110,79 @@ pypIdentifier = pypReserved + Word(alphas, alphanums + "_")
 
 pypIdentifierList = Group(delimitedList(pypIdentifier))
 
+def get_pypIdentifier(name=None):
+    if name:
+        return pypReserved + Word(alphas, alphanums + "_").setName(name)
+    else:
+        return pypReserved + Word(alphas, alphanums + "_")
+
 
 # _____________________________________________________________________________
 #
-# Constant integer expression and ranges
+# Integer expressions and ranges
 # _____________________________________________________________________________
 
-pypHexIntLiteral = CaselessLiteral("0x") - Word(hexnums)
+# -----------------------------------------------------------------------------
+# EBNF: HexIntLiteral = ("0x" | "0X"), HexDigits;
+# -----------------------------------------------------------------------------
+pypHexIntLiteral = \
+        CaselessLiteral("0x") \
+        - Word(hexnums).setName('hex digits')
+
 pypHexIntLiteral.setParseAction(lambda s, l, t: IntLiteral(int(t[1], 16)))
 
-pypBinIntLiteral = CaselessLiteral("0b") - Word('01')
+
+# -----------------------------------------------------------------------------
+# EBNF: BinIntLiteral = ("0b" | "0B"), BinDigits;
+# -----------------------------------------------------------------------------
+pypBinIntLiteral = \
+        CaselessLiteral("0b") \
+        - Word('01').setName('binary digits')
+
 pypBinIntLiteral.setParseAction(lambda s, l, t: IntLiteral(int(t[1], 2)))
 
+
+# -----------------------------------------------------------------------------
+# EBNF: DecIntLiteral = DecDigits;
+# -----------------------------------------------------------------------------
 pypDecIntLiteral = Word(nums)
+
 pypDecIntLiteral.setParseAction(lambda s, l, t: IntLiteral(int(t[0])))
 
+
+# -----------------------------------------------------------------------------
+# EBNF: IntLiteral = HexIntLiteral | BinIntLiteral | DecIntLiteral;
+# -----------------------------------------------------------------------------
 pypIntLiteral = pypHexIntLiteral | pypBinIntLiteral | pypDecIntLiteral
 
+
+# -----------------------------------------------------------------------------
+# EBNF: IntSymbol = Identifier;
+# -----------------------------------------------------------------------------
 pypIntSymbol = pypIdentifier.copy()
+
 pypIntSymbol.setParseAction(lambda s, l, t: IntSymbol(t[0]))
 
+
+# -----------------------------------------------------------------------------
+# EBNF: ;
+# -----------------------------------------------------------------------------
 pypOpExp    = Literal('^')
 pypOpMult   = Literal('*')
 pypOpPlus   = Literal('+')
 pypOpMinus  = Literal('-')
 
-pypInteger = operatorPrecedence(pypIntSymbol | pypIntLiteral, [
+pypIntExpr = operatorPrecedence(pypIntSymbol | pypIntLiteral, [
+    (pypOpExp, 2, opAssoc.RIGHT,
+        lambda s, l, t: reduce(lambda x, y: x ** y, t[0][0::2])),
+    (pypOpMult, 2, opAssoc.LEFT,
+        lambda s, l, t: reduce(lambda x, y: x * y, t[0][0::2])),
+    (pypOpPlus, 2, opAssoc.LEFT,
+        lambda s, l, t: reduce(lambda x, y: x + y, t[0][0::2])),
+    (pypOpMinus, 2, opAssoc.LEFT,
+        lambda s, l, t: reduce(lambda x, y: x - y, t[0][0::2]))])
+
+pypConstIntExpr = operatorPrecedence(pypIntLiteral, [
     (pypOpExp, 2, opAssoc.RIGHT,
         lambda s, l, t: reduce(lambda x, y: x ** y, t[0][0::2])),
     (pypOpMult, 2, opAssoc.LEFT,
@@ -147,16 +194,16 @@ pypInteger = operatorPrecedence(pypIntSymbol | pypIntLiteral, [
 
 # _____
 
-pypIntRange = pypInteger - Suppress(Literal("..")) - pypInteger
+pypIntRange = pypIntExpr - Suppress(Literal("..")) - pypIntExpr
 
-pypIntOrIntRange = pypInteger + Optional(Suppress(Literal("..")) - pypInteger)
+pypIntExprOrRange = pypIntExpr + Optional(Suppress(Literal("..")) - pypIntExpr)
 
-pypIntLiteralOrRange = pypIntLiteral + \
-        Optional(Suppress(Literal("..")) - pypIntLiteral)
+pypConstIntExprOrRange = pypConstIntExpr + \
+        Optional(Suppress(Literal("..")) - pypConstIntExpr)
 
 # _____
 
-pypTypeDefs = Forward()
+#pypTypeDefs = Forward()
 
 
 # _____________________________________________________________________________
@@ -178,7 +225,7 @@ pypStruct.setParseAction(lambda s, l, t: StructDef(t))
 # -----------------------------------------------------------------------------
 # EBNF: EnumItemCode = IntLiteralOrRange;
 # -----------------------------------------------------------------------------
-pypEnumItemCode = pypIntLiteralOrRange.copy()
+pypEnumItemCode = pypConstIntExprOrRange.copy()
 
 pypEnumItemCode.setName('enumeration item code')
 
@@ -265,7 +312,7 @@ pypSizeUnitDef.setParseAction(lambda s, l, t: t[1])
 # Vectors
 # _____________________________________________________________________________
 
-pypVectorLength = pypInteger
+pypVectorLength = pypIntExpr
 
 pypVector1  = Literal("[").setParseAction(lambda s, l, t:
                 StaticVectorDef(isItemBased=False)) \
@@ -293,13 +340,13 @@ pypVector.setParseAction(parseVector)
 
 pypSelfContVector1  = Literal("<").setParseAction(lambda s, l, t:
                         DynamicVectorDef(isItemBased=False)) \
-                    - pypIntOrIntRange \
+                    - pypIntExprOrRange \
                     - Optional(pypSizeUnitDef) \
                     - Suppress(Literal(">"))
 
 pypSelfContVector2  = Literal("<<").setParseAction(lambda s, l, t:
                         DynamicVectorDef(isItemBased=True)) \
-                    - pypIntOrIntRange \
+                    - pypIntExprOrRange \
                     - Suppress(Literal(">>"))
 
 pypSelfContVector = pypSelfContVector2 | pypSelfContVector1
@@ -356,7 +403,7 @@ pypSelect.setParseAction(lambda s, l, t: SelectDef(t[1], t[2:]))
 # Size
 # _____________________________________________________________________________
 
-pypSize = pypInteger | pypIdentifier
+pypSize = pypIntExpr | pypIdentifier
 
 pypSizeDef  = Suppress(Literal('(')) \
             - pypSize \
@@ -382,15 +429,13 @@ pypSizeDef.setParseAction(parseSizeDef)
 # -----------------------------------------------------------------------------
 # EBNF: 
 # -----------------------------------------------------------------------------
-pypTypeParameterName = Word(alphas, alphanums + "_")
-
-pypTypeParameterName.setName('parameter name')
+pypTypeParameterName = get_pypIdentifier('parameter name')
 
 
 # -----------------------------------------------------------------------------
 # EBNF: 
 # -----------------------------------------------------------------------------
-pypTypeParameterValue = pypInteger | Word(alphas, alphanums + "_")
+pypTypeParameterValue = pypIntExpr | Word(alphas, alphanums + "_")
 
 pypTypeParameterValue.setName('parameter value')
 
@@ -440,7 +485,7 @@ pypLiteralConstAssign = Literal('=')
 pypConstDef = Suppress(pypKeywordConst) \
             - pypIdentifier \
             - Suppress(pypLiteralConstAssign) \
-            - pypInteger \
+            - pypIntExpr \
             - pypLineTerm \
 
 pypConstDef.setParseAction(lambda s, l, t: ConstDef(t[0], t[1]))
@@ -497,9 +542,7 @@ def parseTypeDef(s, l, t):
 pypTypeDef.setParseAction(parseTypeDef)
 
 
-pypTypeDefs << ZeroOrMore(pypConstDef ^ pypTypeDef)
-
-pypFile = pypTypeDefs - stringEnd
+pypFile = ZeroOrMore(pypConstDef | pypTypeDef) + stringEnd
 
 
 # _____________________________________________________________________________
@@ -582,13 +625,7 @@ def removeComments(text):
 def parse(text):
 
     typedefs = TypeDefCollection()
-
-    try:
-        typedefs.addDefs(pypFile.parseString(removeComments(text)).asList())
-    except ParseBaseException as e:
-        printError(text, e.lineno, e.col, e.msg)
-        typedefs = None
-
+    typedefs.addDefs(pypFile.parseString(removeComments(text)).asList())
     return typedefs    
 
 

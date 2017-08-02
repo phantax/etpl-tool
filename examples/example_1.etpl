@@ -1,6 +1,6 @@
 
 enum {
-    warning(7), fatal(2),
+    warning(7), fatal(0x7),
     unknown(*), 
     (255)
 } AlertLevel;

@@ -79,6 +79,8 @@ def main(argv):
     # ===== Parse input files =====
     try:
         typedefs = parse(text)
+    except ParseBaseException as e:
+        printSyntaxError(e)
     except EtplParseException as e:
         printSyntaxError(e.error)
     except TPLError as e:
