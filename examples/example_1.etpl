@@ -1,8 +1,8 @@
 
 enum {
-    warning(7), fatal(0x7),
+    warning(99), fatal(0x7),
     unknown(*), 
-    (255)
+    (255), d
 } AlertLevel;
 
 struct {

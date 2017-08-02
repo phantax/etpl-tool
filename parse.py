@@ -214,7 +214,7 @@ pypStruct.setParseAction(lambda s, l, t: StructDef(t))
 # -----------------------------------------------------------------------------
 # EBNF: EnumItemCode = IntLiteralOrRange;
 # -----------------------------------------------------------------------------
-pypEnumItemCode = pypConstIntExprOrRange.copy()
+pypEnumItemCode = Literal('*') | pypConstIntExprOrRange
 
 pypEnumItemCode.setName('enumeration item code')
 
@@ -228,48 +228,36 @@ pypEnumItemIdentifier = get_pypUnqualifiedIdentifier('enumeration item name')
 # -----------------------------------------------------------------------------
 # EBNF: 
 # -----------------------------------------------------------------------------
-pypEnumItem = Optional(pypEnumItemIdentifier) + Block('()', pypEnumItemCode)
+pypEnumItem = Optional(pypEnumItemIdentifier) - Block('()', pypEnumItemCode)
 
 def parseEnumItem(s, l, t):
-    if isinstance(t[0], str):
+    print(t)
+
+    if isinstance(t[-1], str) and t[-1] == '*':
+        if len(t) == 1:
+            # >>> anonymous fallback item >>>
+            return EnumItemFallback(None)
+        elif isinstance(t[0], str) and len(t) == 2:
+            # >>> named fallback item >>>
+            return EnumItemFallback(t[0])
+        else:
+            raise Exception('Should never happen')         
+    elif isinstance(t[0], str):
+        # >>> named enum item >>>
         return EnumItem(t[0], t[1], t[-1])
     else:
-        # an anonymous enum item (without a name)
+        # >>> anonymous enum item >>>
         return EnumItem(None, t[0], t[-1])
 
 pypEnumItem.setParseAction(parseEnumItem)
 
-
-# -----------------------------------------------------------------------------
-# EBNF: FallbackEnumItem = [ EnumItemIdentifier ] "(" "*" ")"
-# -----------------------------------------------------------------------------
-pypFallbackEnumItem = Optional(pypEnumItemIdentifier) \
-                    + Suppress(Block('()', Literal('*')))
-
-def parseFallbackEnumItem(s, l, t):
-    if len(t) > 0:
-        return EnumItemFallback(t[0])
-    else:
-        # an anonymous enum item (without a name)
-        return EnumItemFallback(None)
-
-pypFallbackEnumItem.setParseAction(parseFallbackEnumItem)
+pypEnumItem.setFailAction(failHard)
 
 
 # -----------------------------------------------------------------------------
-# EBNF: 
+# EBNF: EnumBody = EnumItem, { ",", EnumItem };
 # -----------------------------------------------------------------------------
-pypGenericEnumItem = pypFallbackEnumItem | pypEnumItem
-
-pypGenericEnumItem.setName('enumeration item')
-
-pypGenericEnumItem.setFailAction(failHard)
-
-
-# -----------------------------------------------------------------------------
-# EBNF: 
-# -----------------------------------------------------------------------------
-pypEnumBody = CommaSeparatedList(pypGenericEnumItem)
+pypEnumBody = CommaSeparatedList(pypEnumItem)
 
 
 # -----------------------------------------------------------------------------
