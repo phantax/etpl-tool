@@ -52,8 +52,15 @@ pypLine = pypNonComment + Suppress(Optional(pypComment))
 
 # _____
 
-def Block(par, body):
-    return Suppress(Literal(par[0])) + body + Suppress(Literal(par[1]))
+def Block(par, body, name=None):
+    block = Suppress(Literal(par[0])) + body + Suppress(Literal(par[1]))
+    if name:
+        block.setName(name)
+    return block
+
+def CommaSeparatedList(expression):
+    return expression + ZeroOrMore(Suppress(Literal(",")) - expression)
+
 
 # _____
 
@@ -142,7 +149,10 @@ pypInteger = operatorPrecedence(pypIntSymbol | pypIntLiteral, [
 
 pypIntRange = pypInteger - Suppress(Literal("..")) - pypInteger
 
-pypOptionalIntRange = pypInteger + Optional(Suppress(Literal("..")) - pypInteger)
+pypIntOrIntRange = pypInteger + Optional(Suppress(Literal("..")) - pypInteger)
+
+pypIntLiteralOrRange = pypIntLiteral + \
+        Optional(Suppress(Literal("..")) - pypIntLiteral)
 
 # _____
 
@@ -165,28 +175,26 @@ pypStruct.setParseAction(lambda s, l, t: StructDef(t))
 # Enum
 # _____________________________________________________________________________
 
-pypOptionalIntRangeGrouped = pypOptionalIntRange.copy()
-pypOptionalIntRangeGrouped.setParseAction(
-    lambda s, l, t: (t[0]) if len(t) == 1 else (t[0], t[-1]))
+# -----------------------------------------------------------------------------
+# EBNF: EnumItemCode = IntLiteralOrRange;
+# -----------------------------------------------------------------------------
+pypEnumItemCode = pypIntLiteralOrRange.copy()
 
-pypOptionalIntRangeList = delimitedList(pypOptionalIntRangeGrouped)
+pypEnumItemCode.setName('enumeration item code')
+
 
 # -----------------------------------------------------------------------------
-# EBNF: EnumItemIdentifier = Identifier
+# EBNF: EnumItemIdentifier = Identifier;
 # -----------------------------------------------------------------------------
 pypEnumItemIdentifier = pypIdentifier.copy()
 
-# -----------------------------------------------------------------------------
-# EBNF: AbstractEnumItem = EnumItemIdentifier
-# -----------------------------------------------------------------------------
-pypAbstractEnumItem = pypEnumItemIdentifier.copy()
-pypAbstractEnumItem.setParseAction(lambda s, l, t: EnumItemAbstract(t[0]))
+pypEnumItemIdentifier.setName('enumeration item name')
+
 
 # -----------------------------------------------------------------------------
-# EBNF: EnumItem = [ EnumItemIdentifier ], "(", OptionalIntRange, ")"
+# EBNF: 
 # -----------------------------------------------------------------------------
-# TODO: allow for multiple ranges in one EnumItem
-pypEnumItem = Optional(pypEnumItemIdentifier) + Block('()', pypOptionalIntRange)
+pypEnumItem = Optional(pypEnumItemIdentifier) + Block('()', pypEnumItemCode)
 
 def parseEnumItem(s, l, t):
     if isinstance(t[0], str):
@@ -196,6 +204,7 @@ def parseEnumItem(s, l, t):
         return EnumItem(None, t[0], t[-1])
 
 pypEnumItem.setParseAction(parseEnumItem)
+
 
 # -----------------------------------------------------------------------------
 # EBNF: FallbackEnumItem = [ EnumItemIdentifier ] "(" "*" ")"
@@ -212,15 +221,28 @@ def parseFallbackEnumItem(s, l, t):
 
 pypFallbackEnumItem.setParseAction(parseFallbackEnumItem)
 
-# -----------------------------------------------------------------------------
-# EBNF: GenericEnumItem = FallbackEnumItem | EnumItem | AbstractEnumItem
-# EBNF: EnumBody = GenericEnumItem | GenericEnumItem "," EnumBody
-# -----------------------------------------------------------------------------
-pypGenericEnumItem = pypFallbackEnumItem | pypEnumItem | pypAbstractEnumItem
 
-pypEnumBody = delimitedList(pypGenericEnumItem)
+# -----------------------------------------------------------------------------
+# EBNF: 
+# -----------------------------------------------------------------------------
+pypGenericEnumItem = pypFallbackEnumItem | pypEnumItem
 
+pypGenericEnumItem.setName('enumeration item')
+
+pypGenericEnumItem.setFailAction(failHard)
+
+
+# -----------------------------------------------------------------------------
+# EBNF: 
+# -----------------------------------------------------------------------------
+pypEnumBody = CommaSeparatedList(pypGenericEnumItem)
+
+
+# -----------------------------------------------------------------------------
+# EBNF: 
+# -----------------------------------------------------------------------------
 pypEnum = Suppress(pypKeywordEnum) - Block('{}', pypEnumBody)
+
 pypEnum.setParseAction(lambda s, l, t: EnumDef(t))
 
 
@@ -271,13 +293,13 @@ pypVector.setParseAction(parseVector)
 
 pypSelfContVector1  = Literal("<").setParseAction(lambda s, l, t:
                         DynamicVectorDef(isItemBased=False)) \
-                    - pypOptionalIntRange \
+                    - pypIntOrIntRange \
                     - Optional(pypSizeUnitDef) \
                     - Suppress(Literal(">"))
 
 pypSelfContVector2  = Literal("<<").setParseAction(lambda s, l, t:
                         DynamicVectorDef(isItemBased=True)) \
-                    - pypOptionalIntRange \
+                    - pypIntOrIntRange \
                     - Suppress(Literal(">>"))
 
 pypSelfContVector = pypSelfContVector2 | pypSelfContVector1

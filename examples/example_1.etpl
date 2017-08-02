@@ -1,10 +1,9 @@
 
 enum {
-    warning(1),
-    fatal(2),
+    warning(7), fatal(2),
     unknown(*), 
     (255)
 } AlertLevel;
 
-uint8::<hhd=4,> Version;
+uint8::<hhd=4> Version;
 
