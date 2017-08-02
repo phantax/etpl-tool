@@ -2,8 +2,18 @@
 enum {
     warning(7), fatal(0x7),
     unknown(*), 
-//    (255)
+    (255)
 } AlertLevel;
-// hello
+
+struct {
+    uint8 len;
+    select(len) {
+        case dd:
+//            enum { a(1), b(2^8-1) };
+        default:
+//            struct {};
+    };
+} Test;
+
 uint8::<hhd=4> Version;
 

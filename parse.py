@@ -94,17 +94,16 @@ pypReserved = NotAny(
 # _____
 
 # -----------------------------------------------------------------------------
-# EBNF: Identifier = ...
+# EBNF: UnqualifiedIdentifier = ...
 # -----------------------------------------------------------------------------
-pypIdentifier = pypReserved + Word(alphas, alphanums + "_")
+pypUnqualifiedIdentifier = pypReserved + Word(alphas, alphanums + "_")
 
-pypIdentifierList = Group(delimitedList(pypIdentifier))
+def get_pypUnqualifiedIdentifier(name):
+    return pypReserved + Word(alphas, alphanums + "_").setName(name)
 
-def get_pypIdentifier(name=None):
-    if name:
-        return pypReserved + Word(alphas, alphanums + "_").setName(name)
-    else:
-        return pypReserved + Word(alphas, alphanums + "_")
+
+
+pypIdentifierList = Group(delimitedList(pypUnqualifiedIdentifier))
 
 
 # _____________________________________________________________________________
@@ -149,7 +148,7 @@ pypIntLiteral = pypHexIntLiteral | pypBinIntLiteral | pypDecIntLiteral
 # -----------------------------------------------------------------------------
 # EBNF: IntSymbol = Identifier;
 # -----------------------------------------------------------------------------
-pypIntSymbol = pypIdentifier.copy()
+pypIntSymbol = get_pypUnqualifiedIdentifier('integer symbol')
 
 pypIntSymbol.setParseAction(lambda s, l, t: IntSymbol(t[0]))
 
@@ -223,9 +222,7 @@ pypEnumItemCode.setName('enumeration item code')
 # -----------------------------------------------------------------------------
 # EBNF: EnumItemIdentifier = Identifier;
 # -----------------------------------------------------------------------------
-pypEnumItemIdentifier = pypIdentifier.copy()
-
-pypEnumItemIdentifier.setName('enumeration item name')
+pypEnumItemIdentifier = get_pypUnqualifiedIdentifier('enumeration item name')
 
 
 # -----------------------------------------------------------------------------
@@ -382,7 +379,7 @@ pypDefaultCase.setParseAction(lambda s, l, t: DefaultCaseDef(t[1:]))
 
 pypCases = ZeroOrMore(pypCase) + Optional(pypDefaultCase)
 
-pypSelectTest = pypIdentifier
+pypSelectTest = get_pypUnqualifiedIdentifier('variant selector')
 
 pypSelect = pypKeywordSelect - Block('()', pypSelectTest) - Block('{}', pypCases)
 pypSelect.setParseAction(lambda s, l, t: SelectDef(t[1], t[2:]))
@@ -393,7 +390,7 @@ pypSelect.setParseAction(lambda s, l, t: SelectDef(t[1], t[2:]))
 # Size
 # _____________________________________________________________________________
 
-pypSize = pypIntExpr | pypIdentifier
+pypSize = pypIntExpr | pypUnqualifiedIdentifier
 
 pypSizeDef  = Suppress(Literal('(')) \
             - pypSize \
@@ -419,7 +416,7 @@ pypSizeDef.setParseAction(parseSizeDef)
 # -----------------------------------------------------------------------------
 # EBNF: 
 # -----------------------------------------------------------------------------
-pypTypeParameterName = get_pypIdentifier('parameter name')
+pypTypeParameterName = get_pypUnqualifiedIdentifier('parameter name')
 
 
 # -----------------------------------------------------------------------------
@@ -470,15 +467,15 @@ pypTypeParametrization.setParseAction(lambda s, l, t: \
 # Constdefs
 # _____________________________________________________________________________
 
-pypLiteralConstAssign = Literal('=')
+pypConstIntSymbolName = get_pypUnqualifiedIdentifier('symbol name')
 
-pypConstDef = Suppress(pypKeywordConst) \
-            - pypIdentifier \
-            - Suppress(pypLiteralConstAssign) \
+pypConstIntSymbolDef = Suppress(pypKeywordConst) \
+            - pypConstIntSymbolName \
+            - Suppress(Literal('=')) \
             - pypIntExpr \
             - pypLineTerm \
 
-pypConstDef.setParseAction(lambda s, l, t: ConstDef(t[0], t[1]))
+pypConstIntSymbolDef.setParseAction(lambda s, l, t: ConstDef(t[0], t[1]))
 
 
 # _____________________________________________________________________________
@@ -486,20 +483,31 @@ pypConstDef.setParseAction(lambda s, l, t: ConstDef(t[0], t[1]))
 # Typedefs
 # _____________________________________________________________________________
 
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
+pypTypeAliasTypeName = get_pypUnqualifiedIdentifier('type alias type name')
 
-pypAliasTypeName = pypIdentifier.copy()
-pypAliasTypeName.setParseAction(lambda s, l, t: InstanceDef(t[0]))
+pypTypeAliasTypeName.setParseAction(lambda s, l, t: InstanceDef(t[0]))
 
-pypAlias = pypAliasTypeName + Optional(pypTypeParametrization)
+
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
+pypTypeAlias = pypTypeAliasTypeName + Optional(pypTypeParametrization)
 
 def parseParametrizedTypeName(s, l, t):
     if len(t) > 1:
         t[0].setArgs(t[1])
     return t[0]
     
-pypAlias.setParseAction(parseParametrizedTypeName);
+pypTypeAlias.setParseAction(parseParametrizedTypeName);
 
-pypType = pypStruct ^ pypEnum ^ pypAlias
+
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
+pypType = pypStruct ^ pypEnum ^ pypTypeAlias
 
 # Don't allow two size definitions follow each other
 pypVectorOrSizeDef = pypVectorDef | (pypSizeDef + ~FollowedBy(pypSizeDef))
@@ -507,8 +515,16 @@ pypVectorOrSizeDef = pypVectorDef | (pypSizeDef + ~FollowedBy(pypSizeDef))
 pypTypeExtensions   = ZeroOrMore(pypVectorOrSizeDef)
 
 
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
+pypTypeDefName = get_pypUnqualifiedIdentifier('type name')
+
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
 pypTypeDef  = pypType \
-            - pypIdentifier \
+            - pypTypeDefName \
             - pypTypeExtensions \
             - pypLineTerm
 
@@ -532,7 +548,10 @@ def parseTypeDef(s, l, t):
 pypTypeDef.setParseAction(parseTypeDef)
 
 
-pypFile = ZeroOrMore(pypConstDef | pypTypeDef) + stringEnd
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
+pypFile = ZeroOrMore(pypConstIntSymbolDef | pypTypeDef) + stringEnd
 
 pypFile.ignore(cppStyleComment)
 
@@ -544,25 +563,53 @@ pypFile.ignore(cppStyleComment)
 
 # TODO: Allow extern definitions to give a link, e.g. "extern(../myx) uint8 x;"
 
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
 pypStructVarQualifier = \
         pypKeywordExtern | \
         pypKeywordOptional | \
         pypKeywordDistinctive
 
 
-pypInstanceTypeName = pypIdentifier.copy()
-pypInstanceTypeName.setParseAction(lambda s, l, t: InstanceDef(t[0]))
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
+pypStructMemberType = get_pypUnqualifiedIdentifier('struct member type')
 
-pypInstance = pypInstanceTypeName + Optional(pypTypeParametrization)
+pypStructMemberType.setParseAction(lambda s, l, t: InstanceDef(t[0]))
 
 
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
+pypInstance = pypStructMemberType + Optional(pypTypeParametrization)
+
+
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
 pypStructVarType = pypStruct | pypEnum | pypSelect | pypInstance
 
+
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
 pypStructVarTypeExtensions = ZeroOrMore(pypVectorOrSizeDef)
 
+
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
+pypStructMemberName = get_pypUnqualifiedIdentifier('struct member name')
+
+
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
 pypStructVarDef = Optional(pypStructVarQualifier) \
                 + pypStructVarType \
-                - Optional(pypIdentifier) \
+                - Optional(pypStructMemberName) \
                 - pypStructVarTypeExtensions \
                 - pypLineTerm
 
@@ -590,6 +637,10 @@ def parseStructVarDef(s, l, t):
 
 pypStructVarDef.setParseAction(parseStructVarDef)
 
+
+# -----------------------------------------------------------------------------
+# EBNF: ... ;
+# -----------------------------------------------------------------------------
 pypStructVarDefs << ZeroOrMore(pypStructVarDef)
 
 

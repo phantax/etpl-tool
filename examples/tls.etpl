@@ -1,6 +1,25 @@
-TLSRecord MainType[];
+/*  The definition of TLS messages as given in corresponding RFCs rewritten in
+ *  eTPL, an enhanced version of the TLS Presentation Language (see [1]).
+ *
+ *  Author: Andreas Walz [andreas.walz@hs-offenburg.de]
+ *  Copyright (c) 2017: Andreas Walz
+ *
+ *  [1] A. Walz, A. Sikora, "eTPL: An Enhanced Version of the TLS Presentation
+ *      Language Suitable for Automated Parser Generation", 9th IEEE
+ *      International Conference on Intelligent Data Acquisition and Advanced
+ *      Computing Systems: Technology and Applications (IDAACS’2017), Preprint:
+ *      https://ivesk.hs-offenburg.de/fileadmin/Einrichtungen/ivesk/files/
+ *      preprint_eTPL_IDAACS-2017.pdf
+ */
+
+// The order of definitions is not relevant as long as there are no cycles.
+
+// TLSRecordStream is an infinite vector of TLSRecord s
+TLSRecord TLSRecordStream[];
 
 struct {
+    // This field is marked as "distinctive": the dynamic type of a TLSRecord
+    // is determined by the actual value of field "type"
     distinctive Type type;
     Version version;
     uint16 length;
@@ -10,6 +29,7 @@ struct {
         case handshake:
             HandshakeMessage hsMsg(length);
         default:
+            // Substructure for TLSRecords other than alert and handshake not yet defined
             opaque unknown[length];
     } msg;
 } TLSRecord;
