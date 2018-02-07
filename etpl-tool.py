@@ -65,7 +65,7 @@ def indent(str, level=1):
 #
 def main(argv):
 
-    print('\n\033[1m*** etpl-tool: An parser/compiler for eTPL ***\033[0m\n')
+    print('\n\033[1m*** etpl-tool: A parser/compiler for eTPL ***\033[0m\n')
 
     if len(argv) not in [1, 2]:
         print("Invalid number of arguments given. Exiting.\n")

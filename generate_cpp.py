@@ -722,7 +722,7 @@ def genCodeCpp_getClassInstantiation_OpaqueDef(self, pointerName, args=None, sym
             or isinstance(instArgs.get('nbits'), IntSymbol):
         opaqueInstBlock = CodeBlock()
         opaqueInstBlock.addFragment(opaqueInst)
-        opaqueInstBlock.addFragment('{0}->propSet<int>("_dynlen", 1);' \
+        opaqueInstBlock.addFragment('{0}->propSet<int>("_dynlen", 1); // from genCodeCpp_getClassInstantiation_OpaqueDef' \
                 .format(pointerName))
         return opaqueInstBlock
     return opaqueInst
@@ -752,7 +752,7 @@ def genCodeCpp_getClassInstantiation_InstanceDef(self, pointerName, args=None, s
                 # resolve size symbol 
                 cppSizeVar = genCodeCpp_resolveSymbols({'sizeVar': \
                     IntSymbol(size.getSize().getName())}, symbols)['sizeVar']
-                instantiation.addFragment('{0}->propSet<int>("_dynlen", 1);' \
+                instantiation.addFragment('{0}->propSet<int>("_dynlen", 1); // from genCodeCpp_getClassInstantiation_InstanceDef' \
                         .format(pointerName))
             instantiation.addFragment('{0}->dissector().setSize({1});' \
                     .format(pointerName, cppSizeVar))
@@ -1336,7 +1336,9 @@ def genCodeCpp_getEmbeddedClassInstantiation_StaticVectorDef(self, pointerName, 
     code.addFragment(self.getElement().getClassInstantiation(pointerName + '_V'))
     code.addFragment('{0}->setElementTemplate({1});'.format(pointerName, pointerName + '_V'))
     if dynlen:
-        code.addFragment('{0}->propSet<int>("_dynlen", 1);'.format(pointerName))
+        code.addFragment('{0}->propSet<int>("_dynlen", 1); // from genCodeCpp_getEmbeddedClassInstantiation_StaticVectorDef'.format(pointerName))
+        #code.addFragment('{0}->propSet<std::string>(".binding.length", "{1}");' \
+        #        .format(pointerName, self.getLength()))
     return code
 
 StaticVectorDef.getEmbeddedClassInstantiation = genCodeCpp_getEmbeddedClassInstantiation_StaticVectorDef

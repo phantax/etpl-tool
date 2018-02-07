@@ -231,7 +231,7 @@ pypEnumItemIdentifier = get_pypUnqualifiedIdentifier('enumeration item name')
 pypEnumItem = Optional(pypEnumItemIdentifier) - Block('()', pypEnumItemCode)
 
 def parseEnumItem(s, l, t):
-    print(t)
+    #print(t)
 
     if isinstance(t[-1], str) and t[-1] == '*':
         if len(t) == 1:

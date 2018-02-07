@@ -863,7 +863,7 @@ class InstanceDef(TypeDef):
             merged.update(args2)
             if len([k for k in keys1.intersection(set(args2)) \
                     if args1[k] != args2[k]]):
-                print keys1.intersection(set(args2))
+                #print keys1.intersection(set(args2))
                 raise TPLError('Conflicting arguments')      
         return merged
 
