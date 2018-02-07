@@ -15,7 +15,8 @@
 // The order of definitions is not relevant as long as there are no cycles.
 
 // TLSRecordStream is an infinite vector of TLSRecord s
-TLSRecord TLSRecordStream[];
+//TLSRecord TLSRecordStream[];
+TLSRecord MainType[];
 
 struct {
     // This field is marked as "distinctive": the dynamic type of a TLSRecord
