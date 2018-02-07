@@ -1795,14 +1795,18 @@ class SelectDef(TypeDef):
         listDefaults = [1 if isinstance(c, DefaultCaseDef) else 0 \
                 for c in self.getCases()]
         if sum(listDefaults) == 0:
+            # >>> No default branch found >>>
+            # TODO: Accept this case if all possible test symbol values are covered
             raise TPLCheckError(
                     'Missing default case branch in definition of "{0}"' \
                     .format(self.getChainedName('/')))
         elif sum(listDefaults) > 1:
+            # >>> Found more than one default branch >>>
             raise TPLCheckError(
                     'More than one default case branch in definition of "{0}"' \
                     .format(self.getChainedName('/')))
         elif listDefaults[-1] != 1:
+            # >>> Default branch not the last branch >>>
             raise TPLCheckError(
                     'Default case not at end of case list in definition of "{0}"' \
                     .format(self.getChainedName('/')))            
