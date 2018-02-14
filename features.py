@@ -101,9 +101,14 @@ def makeFeatures(features):
             prefix.append(fPathSplit)
 
     featureCode = ['void evaluateFeatures(DataUnit* base, vector<bool>& features) {\n'] \
-            + [indent('vector<DataUnit*> stack;\nDataUnit* last;\n')] \
+            + [indent('vector<DataUnit*> stack;\nDataUnit* last = 0;\n')] \
             + indent('\n'.join(featureCode)).split('\n') \
             + ['}']
+
+    # Prepend source file header
+    featureCode.insert(0, '/*\n *  Do not change this file! It has been generated automatically by etpl-tool.\n */\n')
+    featureCode.insert(1, '#include "DataUnit.h"\n#include <vector>\n')
+    featureCode.insert(2, 'using std::vector;\n')
 
     return featureCode, featureList
 
