@@ -425,6 +425,7 @@ class TypeDef(object):
         self.resetFlags()
         self.resetSize()
         self.resetTypeID()
+        self.bindings = {}
 
     def __str__(self):
         typeStr = '+' if self.isReal() else '-'
@@ -443,6 +444,10 @@ class TypeDef(object):
         if paramStr:
             paramStr = TextFormatter.makeBoldYellow('<{0}>'.format(paramStr))
         string = '{0}{1}: {2}{3}'.format(typeStr, sizeStr, nameStr, paramStr)
+
+        # add bindings
+        if len(self.bindings):
+            string += ' -> ' + TextFormatter.makeBoldYellow(', '.join(map(str, self.bindings.values())))
 
         # add type ID
         #if self.getTypeID():
@@ -1740,12 +1745,12 @@ class SelectDef(TypeDef):
 
     def getTypeStr(self):
         return '{0}({1})'.format(TextFormatter.makeBoldGreen('SELECT'),
-            TextFormatter.makeBoldCyan(self.getTestVarName()))
+            TextFormatter.makeBoldCyan(self.getTestSymbolName()))
 
     def getContentStr(self):
         return '\n'.join([str(c) for c in self.getCases()])
 
-    def getTestVarName(self):
+    def getTestSymbolName(self):
         return self.testSymbol
 
     def resetCases(self):
@@ -1821,7 +1826,7 @@ class SelectDef(TypeDef):
 
     def getRequiredSymbols(self):
         s = TypeDef.getRequiredSymbols(self)
-        s.update(set([self.getTestVarName()]))
+        s.update(set([self.getTestSymbolName()]))
         for c in self.getCases():
             s.update(c.getRequiredSymbols())
         return s
@@ -1836,15 +1841,15 @@ class SelectDef(TypeDef):
         body = '\n'.join([c.getTPLCode() for c in self.getCases()])
         if body:
             body = '\n' + body + '\n'
-        pre = 'select ({0}) {{{1}}}'.format(self.getTestVarName(),
+        pre = 'select ({0}) {{{1}}}'.format(self.getTestSymbolName(),
                 TextFormatter.indent(body))
         return self.mergeWithBaseTPLTriple((pre, None, None))
 
     def getFeatures(self, dynlen=False, symbolChoices=None):
         features = TypeDef.getFeatures(self, dynlen)       
-        if self.getTestVarName() in symbolChoices:
+        if self.getTestSymbolName() in symbolChoices:
             # we only need to consider one specific case branch
-            matchingCase = self[symbolChoices[self.getTestVarName()]]
+            matchingCase = self[symbolChoices[self.getTestSymbolName()]]
             features.update(matchingCase.getFeatures())
         else:
             # we need to consider all possible case branches

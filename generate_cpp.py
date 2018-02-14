@@ -1059,7 +1059,7 @@ def genCodeCpp_invertSymbolUsage(typeDef, symbolName, access, valueVarName):
                         .format(valueVarName, access))
     
     elif isinstance(typeDef, SelectDef):
-        if symbolName == typeDef.getTestVarName():
+        if symbolName == typeDef.getTestSymbolName():
             # Symbol usage in TPL: "select (symbol) { ... }"
             inverted = None
         else:
@@ -1360,7 +1360,7 @@ def genCodeCpp_getEmbeddedClassInstantiation_SelectDef(self, pointerName, args=N
     if not isinstance(parentStruct, StructDef):
         raise TPLError('Select not embedded inside struct')
 
-    testVarName = self.getTestVarName()
+    testVarName = self.getTestSymbolName()
     testVarDef = parentStruct[testVarName].followInstantiation()[0]
     if not isinstance(testVarDef, EnumDef):
         raise TPLError('Test variable is not an enumeration')

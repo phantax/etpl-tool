@@ -304,6 +304,8 @@ pypVector = pypVector2 | pypVector1
 def parseVector(s, l, t):
     if len(t) >= 2:
         t[0].length = t[1]
+        if isinstance(t[1], IntSymbol):
+            t[0].bindings['length'] = t[1].getName()
     # add unit of length if one has been specified
     if len(t) >= 3:
         t[0].lengthUnit = t[2]
@@ -370,6 +372,8 @@ pypCases = ZeroOrMore(pypCase) + Optional(pypDefaultCase)
 pypSelectTest = get_pypUnqualifiedIdentifier('variant selector')
 
 pypSelect = pypKeywordSelect - Block('()', pypSelectTest) - Block('{}', pypCases)
+# t[1] is the test expression (-> test symbol name)
+# t[2:] is the list of case branches
 pypSelect.setParseAction(lambda s, l, t: SelectDef(t[1], t[2:]))
 
 
