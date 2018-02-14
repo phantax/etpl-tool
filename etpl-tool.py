@@ -31,6 +31,7 @@ from core import *
 from parse import *
 from generate_cpp import *
 import normalize
+import features
 
 
 #
@@ -55,9 +56,13 @@ def printSyntaxError(error):
 #
 # _____________________________________________________________________________
 #
-def indent(str, level=1):
-    lines = [' '*(4 if s else 0)*level + s for s in str.split('\n')]
-    return '\n'.join(lines)
+def usage():
+    print('Usage: ./etpl-tool.py [OPTIONS] <input-file>')
+    print('Options:')
+    print(' -p<filename>    Write message parsing code (C++) to file <filename>')
+    print(' -b<basetype>    Select base type for further processing')
+    print(' -F<filename>    Write feature extraction code (C++) to file <filename>')
+    print(' -f<filename>    Write list of features to file <filename>')
 
 
 #
@@ -65,18 +70,47 @@ def indent(str, level=1):
 #
 def main(argv):
 
+    # Parsing command line arguments
+    args = {
+        'p': None,  # Output filename for message parsing code (C++)
+        'b': None,  # Base type for further processing
+        'F': None,  # Output filename for feature extraction code (C++)
+        'f': None,  # Output filename for feature list
+    }
+    argFileIndex = 0
+    for i, arg in enumerate(argv):
+        if not arg.startswith('-'):
+            argFileIndex = i
+            break
+        if len(arg) < 2:
+            # >>> Invalid argument >>>
+            continue   
+        elif len(arg) < 3:
+            # >>> Single flag >>>
+            args[arg[1]] = True
+        elif arg[1] in '':
+            # >>> Integer argument >>>
+            args[arg[1]] = int(arg[2:])
+        else:
+            # >>> Other (e.g., string) argument >>>
+            args[arg[1]] = arg[2:]
+    if (argFileIndex + 1) != len(argv):
+        print('Wrong number of input files given (expect exactly one).')
+        usage()
+        return
+    inputFilename = argv[argFileIndex]
+    parsingCodeFilename = args['p']
+    baseTypeName = args['b']
+    featureCodeFilename = args['F']
+    featureListFilename = args['f']
+
     print('\n\033[1m*** etpl-tool: A parser/compiler for eTPL ***\033[0m\n')
 
-    if len(argv) not in [1, 2]:
-        print("Invalid number of arguments given. Exiting.\n")
-        print("Usage: ./etpl-tool.py <input-file> [<output-file>]\n")
-        quit()
-
-    inputFile = argv[0]
-    with open(inputFile, 'r') as f:
+    # ===== Read input files =====
+    with open(inputFilename, 'r') as f:
         text = ''.join([line for line in f])
 
-    # ===== Parse input files =====
+    # ===== Parse input file =====
     try:
         typedefs = parse(text)
     except ParseBaseException as e:
@@ -85,8 +119,6 @@ def main(argv):
         printSyntaxError(e.error)
     except TPLError as e:
         printError(str(e))
-
-    #typedefs.addGlobalVar('lengthy')
 
     # ===== Print before normalization =====
     print '='*50 + '\nBefore normalization:\n' + '='*50 + '\n'
@@ -125,12 +157,30 @@ def main(argv):
         printError(str(e))
 
 
-    # ===== Generate source code =====
-    if len(argv) == 2:
-        outputFile = argv[1]
-        with open(outputFile, "w") as file:
+    # ===== Generate parsing source code =====
+    if parsingCodeFilename:
+        with open(parsingCodeFilename, "w") as file:
             src = str(typedefs.generateCodeCpp())
             file.write(src)
+
+    # ===== Generate feature list and extraction source code =====
+    if featureCodeFilename or featureListFilename:
+
+        if not baseTypeName:
+            print('Missing base type for features.')
+            usage()
+            return
+
+        featureCode, featureList = features.makeFeatures(
+                typedefs[baseTypeName].getFeatures(True))
+
+        if featureCodeFilename:
+            with open(featureCodeFilename, "w") as file:
+                file.write('\n'.join(featureCode))
+
+        if featureListFilename:
+            with open(featureListFilename, "w") as file:
+                file.write('\n'.join(featureList))
 
 
 #

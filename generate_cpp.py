@@ -26,8 +26,13 @@ from core import *
 # TODO: generate separate .cpp and .h files
 
 
+#
+# _____________________________________________________________________________
+#
 def indent(str, level=1):
-    return '\n'.join([' '*(4 if s else 0)*level + s for s in str.split('\n')])
+    lines = [' '*(4 if s else 0)*level + s for s in str.split('\n')]
+    return '\n'.join(lines)
+
 
 
 class CodeObject(object):
