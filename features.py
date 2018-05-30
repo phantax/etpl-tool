@@ -115,8 +115,8 @@ def makeFeatures(features):
     # Prepend source file header
     featureCode.insert(0, '/*\n *  Do not change this file! It has been generated automatically by etpl-tool.\n */\n')
     featureCode.insert(1, '#include "DataUnit.h"\n#include <vector>\n')
-    featureCode.insert(2, 'using std::vector;\n')
-    featureCode.insert(2, 'using std::string;\n')
+    featureCode.insert(2, 'using std::vector;')
+    featureCode.insert(3, 'using std::string;\n')
 
     return featureCode, featureList
 
