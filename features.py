@@ -58,7 +58,7 @@ def makeFeatures(features):
     for fi, f in enumerate(featuresSorted):
 
         if '@' in f:
-            # >>> Property-basef feature >>>
+            # >>> Property-based feature >>>
             fPath, fProp = tuple(f.split('@'))
             featureList += ['{0}@{1}'.format(fProp, fPath)]
         else:
@@ -105,10 +105,18 @@ def makeFeatures(features):
             + indent('\n'.join(featureCode)).split('\n') \
             + ['}']
 
+    # Function getFeatureList:
+    featureCode.append('\n\nvoid getFeatureList(vector<string>& featureList) {\n')
+    for feature in featureList:
+        featureCode.append(indent('featureList.push_back("{}");'.format(feature)))
+    featureCode.append('\n}\n')
+
+
     # Prepend source file header
     featureCode.insert(0, '/*\n *  Do not change this file! It has been generated automatically by etpl-tool.\n */\n')
     featureCode.insert(1, '#include "DataUnit.h"\n#include <vector>\n')
     featureCode.insert(2, 'using std::vector;\n')
+    featureCode.insert(2, 'using std::string;\n')
 
     return featureCode, featureList
 
