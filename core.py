@@ -1062,18 +1062,24 @@ class VectorDef(WrapperDef):
 
         inst = self.getElement().followInstantiation()[0]
         if isinstance(inst, EnumDef):
-            # <<< the vector's element is an EnumDef >>>
+            # >>> the vector's element is an EnumDef >>>
             features.update(['{0}%'.format(s) \
                     for s in inst.getFullTypeNames()])
 
         elif isinstance(inst, StructDef):
-            # <<< the vector's element is a StructDef >>>
+            # >>> the vector's element is a StructDef >>>
             dynamicTypes = inst.getDynamicTypeNames()
 
             for dynamicType in dynamicTypes:
                 prefix = '{0}:{1}%'.format(inst.getName(), dynamicType)
-                subFeatures = inst.getFeatures(False, dynamicType)
+
+                # Add feature corresponding to presence of vector element
                 features.add(prefix)
+                # Duplicate?
+                features.add(prefix + '~1')
+
+                # Add subfeatures
+                subFeatures = inst.getFeatures(False, dynamicType)
                 if len(subFeatures) > 0:
                     features.update([TypeDef.concatFeatureStrings( \
                             prefix, feature) for feature in subFeatures])
