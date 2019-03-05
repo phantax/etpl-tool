@@ -410,8 +410,8 @@ strOpaqueFieldClass             = 'OpaqueField'
 strOpaqueFieldHeader            = 'OpaqueField.h'
 strEnumerationFieldClass        = 'EnumerationField'
 strEnumerationFieldHeader       = 'EnumerationField.h'
-strCompositeDataUnitClass       = 'CompositeDataUnit'
-strCompositeDataUnitHeader      = 'CompositeDataUnit.h'
+strInternalNodeClass            = 'InternalNode'
+strInternalNodeHeader           = 'InternalNode.h'
 strStaticVectorDataUnitClass    = 'StaticVectorDataUnit'
 strStaticVectorDataUnitHeader   = 'StaticVectorDataUnit.h'
 strStreamVectorDataUnitClass    = 'StreamVectorDataUnit'
@@ -893,15 +893,15 @@ EnumDef.generateCode = genCodeCpp_generateCode_EnumDef
 def genCodeCpp_generateCode_StructDef(self):
 
     classEnvironment, structClass, structConstructor = \
-            self.prepareClass('CompositeDataUnit')
-    structClass.addInheritance(('public', strCompositeDataUnitClass))
-    structClass.addDependency(strCompositeDataUnitHeader)
-    structConstructor.prependInitialization('CompositeDataUnit()')
+            self.prepareClass('InternalNode')
+    structClass.addInheritance(('public', strInternalNodeClass))
+    structClass.addDependency(strInternalNodeHeader)
+    structConstructor.prependInitialization('InternalNode()')
 
-    # add function to expand CompositeDataUnit
+    # add function to expand InternalNode
     structClass.getBody().addFragment(self.generateCodeExpand())
 
-    # add function to encode CompositeDataUnit
+    # add function to encode InternalNode
     structClass.getBody().addFragment(self.generateCodeEncode())
 
     # add function to return distinctive name
