@@ -1075,14 +1075,19 @@ class VectorDef(WrapperDef):
 
                 # Add feature corresponding to presence of vector element
                 features.add(prefix)
+
                 # Duplicate?
                 features.add(prefix + '~1')
 
                 # Add subfeatures
                 subFeatures = inst.getFeatures(False, dynamicType)
                 if len(subFeatures) > 0:
+
                     features.update([TypeDef.concatFeatureStrings( \
                             prefix, feature) for feature in subFeatures])
+
+                    features.update([TypeDef.concatFeatureStrings( \
+                            prefix + '~1', feature) for feature in subFeatures])
 
         return features
 
