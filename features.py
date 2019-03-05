@@ -83,13 +83,15 @@ def makeFeatures(features):
             featureCode += ['base = stack.back();', 'stack.pop_back();']
 
         if levelChange:
+            pathName = '/'.join(prefix[-1] if prefix else [])
             featureCode += ['\n/* <<< base path now is: "{0}" >>> */\n' \
-                    .format('/'.join(prefix[-1] if prefix else []))]
+                    .format(pathName)]
 
         path = '/'.join(fPathSplit[len(prefix[-1]) if prefix else 0:])           
 
-
-        featureCode += ['/* this is feature #{1}: "{0}" */'.format('@'.join(f.split('@')[::-1]), fi)]
+        featureName = '@'.join(f.split('@')[::-1])
+        featureCode += ['/* this is feature #{1}: "{0}" */'.format(
+                featureName, fi)]
 
         if fProp:
             atPath = '@{0}'.format(path) if path else ''
