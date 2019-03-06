@@ -1194,7 +1194,7 @@ StructDef.generateCodeEncode = genCodeCpp_generateCodeEncode_StructDef
 #
 def genCodeCpp_generateCodeDistinctive_StructDef(self):
 
-    code = Function('getDynamicTypeName_', VarType('std::string'), None, True)
+    code = Function('getDynamicType_', VarType('std::string'), None, True)
 
     # get a list of all distinctive members making up the dynamic type
     dynamicTypeMembers = [m.getName() \
